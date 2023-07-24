@@ -1,4 +1,4 @@
-//execute script when window is loaded
+//execute script when window is loaded.
 window.onload = function(){
 	//SVG dimension variables
 	var w = 1600, h = 850;
