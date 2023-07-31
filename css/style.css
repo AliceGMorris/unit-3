@@ -15,3 +15,23 @@
 	font-size: 1.5em;
 	font-weight: bold;
 }
+
+.countries {
+	fill: #FFF;
+	stroke: #000;
+	stroke-width: 2px;
+}
+
+.gratLines {
+	fill: none;
+	stroke: #000;
+	stroke-width: 1px;
+}
+
+.gratBackground {
+	fill: #D5E3FF;
+}
+
+.map {
+	border: medium solid #000;
+}
