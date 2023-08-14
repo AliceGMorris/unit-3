@@ -1,6 +1,5 @@
-//First line of main.js...wrap everything in a self-executing anonymous function to move to local scope
 (function(){
-
+	
 	//pseudo-global variables
 	var attrArray = ["Pop", "Pop/Km", "PercWelsh", "HigherEd", "NEETSPerc"]; //list of attributes
 	var expressed = attrArray[0]; //initial attribute
@@ -8,7 +7,7 @@
 	//chart frame dimensions
 	var chartWidth = window.innerWidth * 0.425,
 		chartHeight = 473,
-		leftPadding = 50,
+		leftPadding = 25,
 		rightPadding = 2,
 		topBottomPadding = 5,
 		chartInnerWidth = chartWidth - leftPadding - rightPadding,
@@ -17,23 +16,7 @@
 	//create a scale to size bars proportionally to frame and for axis
 	var yScale = d3.scaleLinear()
 		.range([463, 0])
-		.domain([0, 100]);
-
-	var chart = d3.select("#map")
-			.append("svg")
-			.attr("width", chartWidth)
-			.attr("height", chartHeight)
-			.attr("class", "chart");
-	
-	//create vertical axis generator
-	var yAxis = d3.axisLeft()
-	.scale(yScale);
-			
-	//place axis
-	var axis = chart.append("g")
-		.attr("class", "axis")
-		.attr("transform", translate)
-		.call(yAxis);
+		.domain([0, 110]);
 	
 	//begin script when window loads
 	window.onload = setMap();
@@ -45,7 +28,7 @@
 			height = 460;
 		
 		//create new svg container for the map
-		var map = d3.select("#map")
+		var map = d3.select("body")
 		.append("svg")
 		.attr("class", "map")
 		.attr("width", width)
@@ -67,7 +50,7 @@
 		promises.push(d3.csv("data/WalesData.csv")); //load attributes from csv 
 		promises.push(d3.json("data/EuropeCountries2.topojson")); //load background spatial data 
 		promises.push(d3.json("data/WalesRegions.topojson")); //load choropleth spatial data 
-		Promise.all(promises).then(callback);		
+		Promise.all(promises).then(callback);
 		
 		function callback(data) {
 			var csvData = data[0],
@@ -76,25 +59,25 @@
 				
 			//place graticule on the map
 			setGraticule(map, path);
-			
+
 			//translate europe TopoJSON
 			var europeCountries = topojson.feature(europe, europe.objects.EuropeCountries),
-			WalesRegions = topojson.feature(wales, wales.objects.Wales).features;
-			
+				walesRegions = topojson.feature(wales, wales.objects.Wales).features;
+				
 			//add Europe countries to map
 			var countries = map.append("path")
 				.datum(europeCountries)
 				.attr("class", "countries")
 				.attr("d", path);
-			
+				
 			//join csv data to GeoJSON enumeration units
-			WalesRegions = joinData(WalesRegions, csvData);
+			walesRegions = joinData(walesRegions, csvData);
 			
 			//create the color scale
 			var colorScale = makeColorScale(csvData);
 			
 			//add enumeration units to the map
-			setEnumerationUnits(WalesRegions, map, path, colorScale);
+			setEnumerationUnits(walesRegions, map, path, colorScale);
 			
 			//add coordinated visualization to the map
 			setChart(csvData, colorScale);
@@ -106,11 +89,11 @@
 	//function to create color scale generator
 	function makeColorScale(data){
 		var colorClasses = [
-			"#7b3294",
-			"#c2a5cf",
-			"#808080",
-			"#a6dba0",
-			"#008837"
+			"#D4B9DA",
+			"#C994C7",
+			"#DF65B0",
+			"#DD1C77",
+			"#980043"
 		];
 
 		//create color scale generator
@@ -128,23 +111,22 @@
 
 		return colorScale;
 	};
-
-			
-	function joinData(WalesRegions, csvData){	
+	
+	function joinData(walesRegions, csvData){	
 		//loop through csv to assign each set of csv attribute values to geojson region
 		for (var i=0; i<csvData.length; i++){
 			var csvRegion = csvData[i]; //the current region
 			var csvKey = csvRegion.name; //the CSV primary key
 
 			//loop through geojson regions to find correct region
-			for (var a=0; a<WalesRegions.length; a++){
+			for (var a=0; a<walesRegions.length; a++){
 
-				var geojsonProps = WalesRegions[a].properties; //the current region geojson properties
+				var geojsonProps = walesRegions[a].properties; //the current region geojson properties
 				var geojsonKey = geojsonProps.name; //the geojson primary key
 
 				//where primary keys match, transfer csv data to geojson properties object
 				if (geojsonKey == csvKey){
-
+					
 					//assign all attributes and values
 					attrArray.forEach(function(attr){
 						var val = parseFloat(csvRegion[attr]); //get csv attribute value
@@ -153,12 +135,13 @@
 				};
 			};
 		};
-		return WalesRegions;
+		return walesRegions;
 	};
+	
 	function setGraticule(map, path){
 			//create graticule generator
 			var graticule = d3.geoGraticule()
-			.step([5, 5]); //place graticule lines every 5 degrees of longitude and latitude
+			.step([2, 2]); //place graticule lines every 5 degrees of longitude and latitude
 			
 			//create graticule background
 			var gratBackground = map.append("path")
@@ -174,10 +157,11 @@
 			.attr("class", "gratLines") //assign class for styling
 			.attr("d", path); //project graticule lines
 	};
-	function setEnumerationUnits(WalesRegions, map, path, colorScale){
-		//add wales regions to map
+	
+	function setEnumerationUnits(walesRegions, map, path, colorScale){
+		//add Welsh regions to map
 		var regions = map.selectAll(".regions")
-			.data(WalesRegions)
+			.data(walesRegions)
 			.enter()
 			.append("path")
 			.attr("class", function(d){
@@ -189,7 +173,7 @@
                 if(value) {                
                     return colorScale(d.properties[expressed]);            
                 } else {                
-                    return "#8B0000";            
+                    return "#ccc";            
                 }    
 			})
 			.on("mouseover", function(event, d){
@@ -203,9 +187,17 @@
 			var desc = regions.append("desc")
 				.text('{"stroke": "#000", "stroke-width": "0.5px"}');
 	};
+	
 	//function to create coordinated bar chart
-	function setChart(csvData, colorScale){		
-		//set bars for each province
+	function setChart(csvData, colorScale){
+		//create a second svg element to hold the bar chart
+		var chart = d3.select("body")
+			.append("svg")
+			.attr("width", chartWidth)
+			.attr("height", chartHeight)
+			.attr("class", "chart");
+		
+		//set bars for each region
 		var bars = chart.selectAll(".bar")
 			.data(csvData)
 			.enter()
@@ -214,7 +206,7 @@
 				return b[expressed]-a[expressed]
 			})
 			.attr("class", function(d){
-				return "bar " + d.name;
+				return "bars " + d.name;
 		})
 		.attr("width", chartInnerWidth / csvData.length - 1)
 		.on("mouseover", function(event, d){
@@ -229,18 +221,27 @@
 			.text('{"stroke": "none", "stroke-width": "0px"}');
 		
 		var chartTitle = chart.append("text")
-			.attr("x", 55)
+			.attr("x", 30)
 			.attr("y", 40)
 			.attr("class", "chartTitle")
+		
+		//create vertical axis generator
+		var yAxis = d3.axisLeft()
+		.scale(yScale);
+		
+		//place axis
+		var axis = chart.append("g")
+		.attr("class", "axis")
+		.attr("transform", translate)
+		.call(yAxis);
 			
 		//set bar positions, heights, and colors
 		updateChart(bars, csvData.length, colorScale);
 	};
-	
 	//function to create a dropdown menu for attribute selection
 	function createDropdown(csvData){
 		//add select element
-		var dropdown = d3.select("#dropdown")
+		var dropdown = d3.select("body")
 			.append("select")
 			.attr("class", "dropdown")
 			.on("change", function(){
@@ -277,7 +278,7 @@
 				if(value) { 
 				return colorScale(value); 
 				} else { 
-				return "#8B0000"; 
+				return "#ccc"; 
 				} 
 			});
 		var bars = d3.selectAll(".bar")
@@ -295,55 +296,6 @@
 	};
 	//function to position, size, and color bars in chart
 	function updateChart(bars, n, colorScale){
-		if (expressed == attrArray[0]) {
-			yScale = d3.scaleLinear()
-				.range([463, 0])
-				.domain([0, 362400]);
-			
-			axis.remove();	
-			
-			//create vertical axis generator
-			yAxis = d3.axisLeft()
-			.scale(yScale);
-			
-			//place axis
-			axis = chart.append("g")
-				.attr("class", "axis")
-				.attr("transform", translate)
-				.call(yAxis);
-		} else if (expressed == attrArray[1]) {
-			yScale = d3.scaleLinear()
-				.range([463, 0])
-				.domain([0, 2572]);
-				
-			axis.remove();	
-				
-			//create vertical axis generator
-			yAxis = d3.axisLeft()
-			.scale(yScale);
-			
-			//place axis
-			axis = chart.append("g")
-				.attr("class", "axis")
-				.attr("transform", translate)
-				.call(yAxis);
-		} else {
-			yScale = d3.scaleLinear()
-				.range([463, 0])
-				.domain([0, 100]);
-			
-			axis.remove();	
-			
-			//create vertical axis generator
-			yAxis = d3.axisLeft()
-			.scale(yScale);
-			
-			//place axis
-			axis = chart.append("g")
-				.attr("class", "axis")
-				.attr("transform", translate)
-				.call(yAxis);
-		}
 		//position bars
 		bars.attr("x", function(d, i){
 				return i * (chartInnerWidth / n) + leftPadding;
@@ -361,51 +313,11 @@
 				if(value) { 
 					return colorScale(value); 
 				} else { 
-					return "#8B0000"; 
+					return "#ccc"; 
 				} 
 		});
-		//Pop
-		if (expressed == attrArray[0]) {
-			var chartTitle = d3.select(".chartTitle")
-				.text("Number of people in each region");
-			var Title = d3.select("#LabelTitle")
-				.text(expressed)
-			var Title = d3.select("#Para")
-				.text("As of the 2021 Census, 93.8% of the population identified as White, with 90.6% of the white population identifying as Welsh, English, Scottish, Northern Irish, or British. People in the Black, Black Welsh, Caribbean of African group were most likely to report as being in very good health (88.7%). Asian, Asian Welsh, or Asian British group were the least likely to classify themselves as being disabled (9.7%). Asian, Asian Welsh, or Asian British group were most likely to hold qualifications at Level 4 or above (43.9%) while the white group was least likely (9.3%).")
-		//Pop/SqKM
-		} else if (expressed == attrArray[1]) {
-			var chartTitle = d3.select(".chartTitle")
-				.text("Number of people per square kilometer in each region");
-			var Title = d3.select("#LabelTitle")
-				.text(expressed)
-			var Title = d3.select("#Para")
-				.text(" Wales has 150 residents per square kilometer. Cardiff is the densest at 2572 residents per square kilometer, more than 3 times the next highest, Newport, at 838 residents per square kilometer. Powys has the lowest density at 26 residents per square kilometer.")
-		//% Welsh Speakers
-		} else if (expressed == attrArray[2]) {
-			var chartTitle = d3.select(".chartTitle")
-				.text("Percentage of people in each region who can speak Welsh");
-			var Title = d3.select("#LabelTitle")
-				.text(expressed)
-			var Title = d3.select("#Para")
-				.text("As of the 2021 Welsh Census, 17.8% of the population over the age of 3 could speak Welsh. 1.2% points lower than the 2011 Census. With the percentage of people able to speak Welsh being the lowest percentage ever recorded in a census. 5 to 15 year old age group saw a 6 percentage point decrease. The highest areas of Welsh speaking are in the north-west.")
-		//%HigherEd
-		} else if (expressed == attrArray[3]) {
-			var chartTitle = d3.select(".chartTitle")
-				.text("Percentage of people aged 18-19 not pursuing higher education");
-			var Title = d3.select("#LabelTitle")
-				.text(expressed)
-			var Title = d3.select("#Para")
-				.text("19.9% of the Welsh population reported having no qualifications, while 31.5% reported having a Level 4 qualification or above. Most regions saw a decrease in proportion of full-time students since 2011, except for 5 local authorities such as Cardiff. Cardiff saw the highest percentage of schoolchildren or full-time students at 27.6% of their population while Powys saw the lowest at 15.5%.")
-		//%NEETs
-		} else if (expressed == attrArray[4]) {
-			var chartTitle = d3.select(".chartTitle")
-				.text("Percentage of people aged 16-24 who are NEETs by region");
-			var Title = d3.select("#LabelTitle")
-				.text(expressed)
-			var Title = d3.select("#Para")
-				.text("Young people not in education, employment or training (NEET) has seen a decrease from 2011 to 2017, but saw a rise between 2020 and 2021. This increase is driven by an economic inactivity rate. 2008 saw the largest increase in NEETs (17.4% increase between 2008 and 2009) which continued to lower every year up to 2017. Males have a higher percentage of NEETs in the 16-18 age group with Males being 14.7% and females being 12.4%. 19-24 age group saw an increase in female NEETs from 14.3% to 15.9% while males saw a decrease from 2020-2021 from 17.2% to 16.7%.")
-		}
-		
+		var chartTitle = d3.select(".chartTitle")
+			.text("Number of Variable " + expressed[3] + " in each region");
 	};
 	//function to highlight enumeration units and bars
 	function highlight(props){
@@ -440,7 +352,7 @@
 			"</h1><b>" + expressed + "</b>";
 			
 		//create info label div
-		var infolabel = d3.select("#map")
+		var infolabel = d3.select("body")
 			.append("div")
 			.attr("class", "infolabel")
 			.attr("id", props.name + "_label")
